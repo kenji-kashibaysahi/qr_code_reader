@@ -1,0 +1,233 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy" content="default-src * data: gap: content: https://ssl.gstatic.com; style-src * 'unsafe-inline'; script-src * 'unsafe-inline' 'unsafe-eval'">
+    <script src="components/loader.js"></script>
+    <link rel="stylesheet" href="components/loader.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="onsenui/css/onsenui.min.css">
+    <link rel="stylesheet" href="onsenui/css/onsen-css-components.min.css">
+    <script src="onsenui/js/onsenui.min.js"></script>
+    <script src="js/jquery-3.4.1.min.js"></script>
+    <script>
+    ons.ready(function() {
+      console.log("Onsen UI is ready!");
+    });
+
+    if (ons.platform.isIPhoneX()) {
+      document.documentElement.setAttribute('onsflag-iphonex-portrait', '');
+      document.documentElement.setAttribute('onsflag-iphonex-landscape', '');
+    }
+
+    function clearAnswer() {
+          console.log('syokika');
+          $('#noshi_code').html('');
+          $('#product_code').html('');
+          $('#receipt_code').html('');
+          $('#check-result').html('<ons-icon icon="fa-warning" style="color: red">チェックが完了していません。</ons-icon>'); 
+    }
+
+     function getNow() {
+        var now = new Date();              
+        var mon = now.getMonth()+1; //１を足すこと
+        var day = now.getDate();
+        var hour = now.getHours();
+        var min = now.getMinutes();              
+        //出力用
+        var s = mon + "月" + day + "日" + hour + "時" + min + "分"; 
+        return s;
+    }
+
+    function decodeQr() {
+      // QRコードの値読み取り
+      $('#answer').val()      
+    }  
+    
+    function doScan(dest) {
+      cordova.plugins.barcodeScanner.scan(
+        function(result) {
+          // alert("We got a barcode\n" +
+          //   "Result: " + result.text + "\n" +
+          //   "Format: " + result.format + "\n" +
+          //   "Canceled: " + result.cancelled );
+          if( !result.cancelled ) {
+            $('#'+dest+'_code').html('<ons-icon icon="fa-check" style="color: green">' + result.text + '</ons-icon>')
+          } else {
+            $('#'+dest+'_code').children().remove()
+          }
+          console.log(result.text);
+          const path = location.pathname.substring(0,location.pathname.lastIndexOf('/')+1);
+          console.log(path);
+          if( $('#noshi_code').first().text() == $('#product_code').first().text()
+              && $('#receipt_code').first().text() == $('#noshi_code').first().text() ) {
+            $('#check-result').html('<ons-icon icon="fa-check" style="color: green">チェックが完了しました。</ons-icon>');
+
+            var timeVal = getNow();
+            // 要素を生成
+            var onsListItem = document.createElement("ons-list-item");
+            onsListItem.setAttribute('modifier', "chevron");
+            onsListItem.setAttribute('onclick', "document.getElementById('appNavigator').pushPage('result.html', { data: { title: '詳細'}, animation: 'slide'})");
+            onsListItem.innerHTML ="<ons-list-item>"
+            + timeVal +'　'
+            + "<ons-icon icon='fa-check' style='color: green'>"
+            + result.text + "</ons-icon></ons-list-item >";
+            // 生成した要素を追加する
+            document.getElementById('check-history').appendChild(onsListItem);
+            // 正解音
+            const media = new Media(path + 'correct1.mp3',
+              () => console.log('Successfully initialize a meda file.'),
+              (error) => console.log('Failed to initialize a media file.[ Error code: ' + error.code + ', Error message: ' + error.message + ']'));
+            media.play({numberOfLoops: 0});
+          } else {
+            $('#check-result').html('<ons-icon icon="fa-warning" style="color: red">コードが不一致です。</ons-icon>')
+            // 不正解音
+            if ($('#noshi_code').first().text()
+              && $('#product_code').first().text()
+              && $('#receipt_code').first().text()) {
+              const media = new Media(path + 'incorrect1.mp3',
+                () => console.log('Successfully initialize a meda file.'),
+                (error) => console.log('Failed to initialize a media file.[ Error code: ' + error.code + ', Error message: ' + error.message + ']'));
+              media.play({numberOfLoops: 0});
+            }
+          }
+        },
+        function(error) {
+          alert("Scanning failed: " + error);
+        },
+        {
+          resultDisplayDuration: 0
+        }
+      );
+    }
+
+    function debugProps(obj) {
+      console.log( Object.getOwnPropertyNames( obj ).join( '\n' ) )
+    }
+
+    function debugAllProps(obj) {
+      var propNames = []
+      var o = obj
+      while( o ) {
+        propNames = propNames.concat( Object.getOwnPropertyNames( o ) )
+        o = Object.getPrototypeOf( o )
+      }
+      console.log( propNames.join( '\n' ) )
+    }
+    window.fn = {};
+
+    window.fn.toggleMenu = function () {
+      document.getElementById('appSplitter').right.toggle();
+    };
+
+    window.fn.pushPage = function (page, anim) {
+      if (anim) {
+        document.getElementById('appNavigator').pushPage(page.id, { data: { title: page.title }, animation: anim });
+      } else {
+        document.getElementById('appNavigator').pushPage(page.id, { data: { title: page.title } });
+      }
+    };
+  </script>
+</head>
+<body>
+  <ons-navigator id="appNavigator" swipeable swipe-target-width="80px">
+  <ons-page>
+    <ons-splitter id="appSplitter">
+      
+      <ons-splitter-content page="tabbar.html"></ons-splitter-content>
+    </ons-splitter>
+  </ons-page>
+  </ons-navigator>
+
+  <template id="tabbar.html">
+    <ons-page id="tabbar-page">
+      <ons-toolbar>
+        <div class="center">Home</div>       
+      </ons-toolbar>
+      <ons-tabbar swipeable id="appTabbar" position="auto">
+        <ons-tab label="Home" icon="fa-home" page="home.html" active></ons-tab>
+        <ons-tab label="History" icon="fa-book" page="history.html"></ons-tab>
+      </ons-tabbar>  
+      <script>
+        ons.getScriptPage().addEventListener('prechange', function(event) {
+        if (event.target.matches('#appTabbar')) {
+          event.currentTarget.querySelector('ons-toolbar .center').innerHTML = event.tabItem.getAttribute('label');
+        }
+      });
+      </script>
+    </ons-page>
+  </template>
+  
+   <ons-template id="home.html">
+     <ons-page>
+      <p style="text-align: center">
+        QRコードをチェックしてください。
+      </p>
+        <ons-list-header>QRコード読み込み</ons-list-header>
+        <ons-list-item>
+          <div>のし: <span id="noshi_code"></span></div>
+          <div class= "right"><ons-button onclick="doScan('noshi')">
+            <ons-icon icon= "md-camera"> Scan</ons-icon></ons-button>
+          </div>
+        </ons-list-item >
+        <ons-list-item>
+          <div>商品: <span id="product_code"></span></div>
+          <div class= "right"><ons-button onclick="doScan('product')">
+            <ons-icon icon= "md-camera"> Scan</ons-icon>
+          </ons-button></div>
+        </ons-list-item >
+        <ons-list-item>
+          <div>納品書: <span id="receipt_code"></span></div>
+          <div class= "right"><ons-button onclick="doScan('receipt')">
+            <ons-icon icon= "md-camera"> Scan</ons-icon>
+          </ons-button></div>
+        </ons-list-item >
+        <div id="check-result" style="color: red; text-align: center;"><ons-icon icon="fa-warning"></ons-icon>チェックが完了していません。</div>
+        <div style="text-align: center;"><ons-button onclick="clearAnswer()"><ons-icon icon="md-close"> Reset</ons-icon></ons-button></div>
+       
+        
+    </ons-page> 
+  </ons-template>
+  <ons-template id=history.html>
+    <ons-page>
+      <p style="text-align: center">
+        QRコードのチェック結果の履歴を表示します。
+      </p>
+      <p style="text-align: center">
+        項目毎に詳細を確認できます。
+      </p>
+      <ons-list-header>履歴</ons-list-header>
+      <ons-list id="check-history">        
+      </ons-list>
+    </ons-page>
+  </ons-template>
+  <ons-template id=result.html>
+    <ons-page>
+      <ons-toolbar>
+        <div class="left">
+          <ons-back-button>History</ons-back-button>
+        </div>
+        <div class="center"></div>
+      </ons-toolbar>
+      <p style="text-align: center">
+        ブラウザの戻るボタンで戻ってください。
+      </p>
+      <ons-list-header>QRコード読み込み結果</ons-list-header>
+        <ons-list-item>
+          <div>のし: <span id="result_noshi_code" style="color:green">OK</span></div>          
+        </ons-list-item >
+        <ons-list-item>
+          <div>商品: <span id="result_product_code" style="color:green">OK</span></div>          
+        </ons-list-item >
+        <ons-list-item>
+          <div>納品書: <span id="result_receipt_code" style="color:green">OK</span></div>
+        </ons-list-item >
+        <p style="text-align: center">
+        <ons-icon  size="60px" icon="fa-check" style="color: green;">PASSED</ons-icon>
+      </p>
+    </ons-page>
+  </ons-template>
+
+</body>
+</html>
